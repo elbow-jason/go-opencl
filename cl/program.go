@@ -1,7 +1,16 @@
 package cl
 
-// #include <stdlib.h>
-// #include "cl.h"
+/*
+#cgo CFLAGS: -I CL -w
+#cgo !darwin LDFLAGS: -lOpenCL
+#cgo darwin LDFLAGS: -framework OpenCL
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+#include <stdlib.h>
+*/
 import "C"
 
 import (
