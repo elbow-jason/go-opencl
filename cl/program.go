@@ -58,6 +58,7 @@ func (p *Program) BuildProgram(devices []*Device, options string) error {
 	if devices != nil && len(devices) > 0 {
 		deviceList = buildDeviceIDList(devices)
 		deviceListPtr = &deviceList[0]
+		numDevices = C.cl_uint(len(deviceList))
 	}
 	statusCode := C.clBuildProgram(p.clProgram, numDevices, deviceListPtr, cOptions, nil, nil)
 	err := toError(statusCode)
