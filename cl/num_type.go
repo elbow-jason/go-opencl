@@ -8,6 +8,7 @@ import (
 // NumTyped is the interface for Buffers and HostMem that store types of numbers.
 type NumTyped interface {
 	SizeofT() uintptr
+	ClSrc() string
 }
 
 // PrimitiveType is a runtime enum for supported Golang number types
@@ -62,6 +63,36 @@ func (t PrimitiveType) String() string {
 		return "Uint"
 	default:
 		panic(fmt.Sprintf("Unhandled PrimitiveType during String call"))
+	}
+}
+
+// ClSrc is the OpenCL src code type string for a given PrimitiveType
+func (t PrimitiveType) ClSrc() string {
+	switch t {
+	case Int8:
+		return "char"
+	case Uint8:
+		return "uchar"
+	case Int16:
+		return "short"
+	case Uint16:
+		return "ushort"
+	case Int32:
+		return "int"
+	case Uint32:
+		return "uint"
+	case Float32:
+		return "float"
+	case Int64:
+		return "long"
+	case Uint64:
+		return "ulong"
+	case Float64:
+		return "double"
+	case Uint:
+		return "size_t"
+	default:
+		panic(fmt.Sprintf("Unhandled PrimitiveType during ClSrc call"))
 	}
 }
 
