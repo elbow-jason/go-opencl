@@ -19,11 +19,11 @@ import (
 	"unsafe"
 )
 
-// BuildError ..
-type BuildError string
+// ProgramBuildError ..
+type ProgramBuildError string
 
 // Error ..
-func (e BuildError) Error() string {
+func (e ProgramBuildError) Error() string {
 	return fmt.Sprintf("cl: build error (%s)", string(e))
 }
 
@@ -59,25 +59,33 @@ func (p *Program) BuildProgram(devices []*Device, options string) error {
 		deviceList = buildDeviceIDList(devices)
 		deviceListPtr = &deviceList[0]
 	}
-	if err := C.clBuildProgram(p.clProgram, numDevices, deviceListPtr, cOptions, nil, nil); err != C.CL_SUCCESS {
-		buffer := make([]byte, 4096)
-		var bLen C.size_t
-		var err C.cl_int
-		for i := 2; i >= 0; i-- {
-			err = C.clGetProgramBuildInfo(p.clProgram, p.devices[0].id, C.CL_PROGRAM_BUILD_LOG, C.size_t(len(buffer)), unsafe.Pointer(&buffer[0]), &bLen)
-			if err == C.CL_INVALID_VALUE && i > 0 && bLen < 1024*1024 {
-				// INVALID_VALUE probably means our buffer isn't large enough
-				buffer = make([]byte, bLen)
-			} else {
-				break
-			}
-		}
-		if err != C.CL_SUCCESS {
-			return toError(err)
-		}
-		return BuildError(string(buffer[:bLen]))
+	statusCode := C.clBuildProgram(p.clProgram, numDevices, deviceListPtr, cOptions, nil, nil)
+	err := toError(statusCode)
+	if err != nil {
+		return err
 	}
 	return nil
+}
+
+// BuildLogs ..
+func (p Program) BuildLogs() ([]string, error) {
+	logs := make([]string, len(p.devices))
+	var bLen C.size_t
+	var err error
+	for _, device := range p.devices {
+		// Get the byteSize
+		err = toError(C.clGetProgramBuildInfo(p.clProgram, device.id, C.CL_PROGRAM_BUILD_LOG, 0, nil, &bLen))
+		if err != nil {
+			return nil, err
+		}
+		buffer := make([]byte, bLen)
+		err = toError(C.clGetProgramBuildInfo(p.clProgram, device.id, C.CL_PROGRAM_BUILD_LOG, bLen, unsafe.Pointer(&buffer[0]), nil))
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, string(buffer))
+	}
+	return logs, nil
 }
 
 // CreateKernel returns the *Kernel of the given name.

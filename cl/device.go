@@ -5,9 +5,13 @@ package cl
 #cgo !darwin LDFLAGS: -lOpenCL
 #cgo darwin LDFLAGS: -framework OpenCL
 #ifdef __APPLE__
+
 #include <OpenCL/opencl.h>
 #else
 #include <CL/cl.h>
+#endif
+#ifndef CL_DEVICE_ID_APPLE_UNUSABLE
+#define CL_DEVICE_ID_APPLE_UNUSABLE (cl_device_id) 0xffffffff
 #endif
 */
 import "C"
@@ -101,27 +105,40 @@ func buildDeviceIDList(devices []*Device) []C.cl_device_id {
 	return deviceIDs
 }
 
+func buildDeviceListFromDeviceIDs(deviceIDs []C.cl_device_id) []*Device {
+	devices := []*Device{}
+	for _, deviceID := range deviceIDs {
+		if deviceID == nil {
+			continue
+		}
+		if deviceID == C.CL_DEVICE_ID_APPLE_UNUSABLE {
+			continue
+		}
+		devices = append(devices, &Device{id: deviceID})
+	}
+	return devices
+}
+
 // GetDevices obtaisn the list of devices available on a platform. 'platform' refers
 // to the platform returned by GetPlatforms or can be nil. If platform
 // is nil, the behavior is implementation-defined.
 func GetDevices(platform *Platform, deviceType DeviceType) ([]*Device, error) {
-	var deviceIDs [maxDeviceCount]C.cl_device_id
 	var numDevices C.cl_uint
 	var platformID C.cl_platform_id
 	if platform != nil {
 		platformID = platform.id
 	}
-	if err := C.clGetDeviceIDs(platformID, C.cl_device_type(deviceType), C.cl_uint(maxDeviceCount), &deviceIDs[0], &numDevices); err != C.CL_SUCCESS {
-		return nil, toError(err)
+	clDeviceType := C.cl_device_type(deviceType)
+	err := toError(C.clGetDeviceIDs(platformID, clDeviceType, 0, nil, &numDevices))
+	if err != nil {
+		return nil, err
 	}
-	if numDevices > maxDeviceCount {
-		numDevices = maxDeviceCount
+	deviceIDs := make([]C.cl_device_id, numDevices)
+	err = toError(C.clGetDeviceIDs(platformID, clDeviceType, numDevices, &deviceIDs[0], nil))
+	if err != nil {
+		return nil, err
 	}
-	devices := make([]*Device, numDevices)
-	for i := 0; i < int(numDevices); i++ {
-		devices[i] = &Device{id: deviceIDs[i]}
-	}
-	return devices, nil
+	return buildDeviceListFromDeviceIDs(deviceIDs), nil
 }
 
 func (d *Device) nullableID() C.cl_device_id {
