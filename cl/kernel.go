@@ -83,7 +83,27 @@ func (k *Kernel) SetArgLocal(index int, size int) error {
 // SetArgNumber ..
 func (k *Kernel) SetArgNumber(index int, arg interface{}) error {
 	switch val := arg.(type) {
-	case uint8, int8, uint16, int16, uint32, int32, float32, int64, uint64, float64:
+	case uint8:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case int8:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case uint16:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case int16:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case uint32:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case int32:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case float32:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case int64:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case uint64:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case float64:
+		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
+	case uint:
 		return k.SetArgUnsafe(index, int(unsafe.Sizeof(val)), unsafe.Pointer(&val))
 	default:
 		return ErrUnsupportedArgumentType{Index: index, Value: arg}
