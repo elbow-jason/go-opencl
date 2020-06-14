@@ -61,9 +61,9 @@ func (b *MemObject) Release() {
 
 // CreateContext ..
 func CreateContext(devices []*Device) (*Context, error) {
-	deviceIds := buildDeviceIdList(devices)
+	deviceIDs := buildDeviceIDList(devices)
 	var err C.cl_int
-	clContext := C.clCreateContext(nil, C.cl_uint(len(devices)), &deviceIds[0], nil, nil, &err)
+	clContext := C.clCreateContext(nil, C.cl_uint(len(devices)), &deviceIDs[0], nil, nil, &err)
 	if err != C.CL_SUCCESS {
 		return nil, toError(err)
 	}
@@ -166,6 +166,7 @@ func (ctx *Context) CreateUserEvent() (*Event, error) {
 	return newEvent(clEvent), nil
 }
 
+// Release ..
 func (ctx *Context) Release() {
 	releaseContext(ctx)
 }

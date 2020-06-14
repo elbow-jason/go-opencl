@@ -19,8 +19,10 @@ import (
 
 const maxDeviceCount = 64
 
+// DeviceType ..
 type DeviceType uint
 
+// DeviceType variants
 const (
 	DeviceTypeCPU         DeviceType = C.CL_DEVICE_TYPE_CPU
 	DeviceTypeGPU         DeviceType = C.CL_DEVICE_TYPE_GPU
@@ -29,8 +31,10 @@ const (
 	DeviceTypeAll         DeviceType = C.CL_DEVICE_TYPE_ALL
 )
 
+// FPConfig ..
 type FPConfig int
 
+// FpConfig variants
 const (
 	FPConfigDenorm         FPConfig = C.CL_FP_DENORM           // denorms are supported
 	FPConfigInfNaN         FPConfig = C.CL_FP_INF_NAN          // INF and NaNs are supported
@@ -84,29 +88,30 @@ func (dt DeviceType) String() string {
 	return strings.Join(parts, "|")
 }
 
+// Device is a cl_device_id wrapping struct
 type Device struct {
 	id C.cl_device_id
 }
 
-func buildDeviceIdList(devices []*Device) []C.cl_device_id {
-	deviceIds := make([]C.cl_device_id, len(devices))
+func buildDeviceIDList(devices []*Device) []C.cl_device_id {
+	deviceIDs := make([]C.cl_device_id, len(devices))
 	for i, d := range devices {
-		deviceIds[i] = d.id
+		deviceIDs[i] = d.id
 	}
-	return deviceIds
+	return deviceIDs
 }
 
-// Obtain the list of devices available on a platform. 'platform' refers
+// GetDevices obtaisn the list of devices available on a platform. 'platform' refers
 // to the platform returned by GetPlatforms or can be nil. If platform
 // is nil, the behavior is implementation-defined.
 func GetDevices(platform *Platform, deviceType DeviceType) ([]*Device, error) {
-	var deviceIds [maxDeviceCount]C.cl_device_id
+	var deviceIDs [maxDeviceCount]C.cl_device_id
 	var numDevices C.cl_uint
-	var platformId C.cl_platform_id
+	var platformID C.cl_platform_id
 	if platform != nil {
-		platformId = platform.id
+		platformID = platform.id
 	}
-	if err := C.clGetDeviceIDs(platformId, C.cl_device_type(deviceType), C.cl_uint(maxDeviceCount), &deviceIds[0], &numDevices); err != C.CL_SUCCESS {
+	if err := C.clGetDeviceIDs(platformID, C.cl_device_type(deviceType), C.cl_uint(maxDeviceCount), &deviceIDs[0], &numDevices); err != C.CL_SUCCESS {
 		return nil, toError(err)
 	}
 	if numDevices > maxDeviceCount {
@@ -114,12 +119,12 @@ func GetDevices(platform *Platform, deviceType DeviceType) ([]*Device, error) {
 	}
 	devices := make([]*Device, numDevices)
 	for i := 0; i < int(numDevices); i++ {
-		devices[i] = &Device{id: deviceIds[i]}
+		devices[i] = &Device{id: deviceIDs[i]}
 	}
 	return devices, nil
 }
 
-func (d *Device) nullableId() C.cl_device_id {
+func (d *Device) nullableID() C.cl_device_id {
 	if d == nil {
 		return nil
 	}
@@ -182,55 +187,62 @@ func (d *Device) getInfoBool(param C.cl_device_info, panicOnError bool) (bool, e
 	return val == C.CL_TRUE, nil
 }
 
+// Name is the name of the device
 func (d *Device) Name() string {
 	str, _ := d.getInfoString(C.CL_DEVICE_NAME, true)
 	return str
 }
 
+// Vendor is the vendor of the device e.g. "Intel"
 func (d *Device) Vendor() string {
 	str, _ := d.getInfoString(C.CL_DEVICE_VENDOR, true)
 	return str
 }
 
-func (d *Device) Extensions() string {
+// Extensions is list of extensions
+func (d *Device) Extensions() []string {
 	str, _ := d.getInfoString(C.CL_DEVICE_EXTENSIONS, true)
-	return str
+	return strings.Split(str, " ")
 }
 
+// OpenCLCVersion is version of the device's OpenCL compiler implementation
 func (d *Device) OpenCLCVersion() string {
 	str, _ := d.getInfoString(C.CL_DEVICE_OPENCL_C_VERSION, true)
 	return str
 }
 
+// Profile ..
 func (d *Device) Profile() string {
 	str, _ := d.getInfoString(C.CL_DEVICE_PROFILE, true)
 	return str
 }
 
+// Version is the OpenCL device's version e.g. "OpenCL 1.2"
 func (d *Device) Version() string {
 	str, _ := d.getInfoString(C.CL_DEVICE_VERSION, true)
 	return str
 }
 
+// DriverVersion ..
 func (d *Device) DriverVersion() string {
 	str, _ := d.getInfoString(C.CL_DRIVER_VERSION, true)
 	return str
 }
 
-// The default compute device address space size specified as an
+// AddressBits is the default compute device address space size specified as an
 // unsigned integer value in bits. Currently supported values are 32 or 64 bits.
 func (d *Device) AddressBits() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_ADDRESS_BITS, true)
 	return int(val)
 }
 
-// Size of global memory cache line in bytes.
+// GlobalMemCachelineSize is the size of global memory cache line in bytes.
 func (d *Device) GlobalMemCachelineSize() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, true)
 	return int(val)
 }
 
-// Maximum configured clock frequency of the device in MHz.
+// MaxClockFrequency is the maximum configured clock frequency of the device in MHz.
 func (d *Device) MaxClockFrequency() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_MAX_CLOCK_FREQUENCY, true)
 	return int(val)
@@ -279,7 +291,7 @@ func (d *Device) MaxWriteImageArgs() int {
 	return int(val)
 }
 
-// The minimum value is the size (in bits) of the largest OpenCL built-in
+// MemBaseAddrAlign is the minimum size (in bits) of the largest OpenCL built-in
 // data type supported by the device (long16 in FULL profile, long16 or
 // int16 in EMBEDDED profile) for devices that are not of type CL_DEVICE_TYPE_CUSTOM.
 func (d *Device) MemBaseAddrAlign() int {
@@ -287,36 +299,43 @@ func (d *Device) MemBaseAddrAlign() int {
 	return int(val)
 }
 
+// NativeVectorWidthChar ..
 func (d *Device) NativeVectorWidthChar() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR, true)
 	return int(val)
 }
 
+// NativeVectorWidthShort ..
 func (d *Device) NativeVectorWidthShort() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT, true)
 	return int(val)
 }
 
+// NativeVectorWidthInt ..
 func (d *Device) NativeVectorWidthInt() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_INT, true)
 	return int(val)
 }
 
+// NativeVectorWidthLong ..
 func (d *Device) NativeVectorWidthLong() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG, true)
 	return int(val)
 }
 
+// NativeVectorWidthFloat ..
 func (d *Device) NativeVectorWidthFloat() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT, true)
 	return int(val)
 }
 
+// NativeVectorWidthDouble ..
 func (d *Device) NativeVectorWidthDouble() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE, true)
 	return int(val)
 }
 
+// NativeVectorWidthHalf ..
 func (d *Device) NativeVectorWidthHalf() int {
 	val, _ := d.getInfoUint(C.CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF, true)
 	return int(val)
@@ -398,45 +417,52 @@ func (d *Device) MaxMemAllocSize() int64 {
 	return val
 }
 
-// Size of global device memory in bytes.
+// GlobalMemSize is the size of global device memory in bytes.
 func (d *Device) GlobalMemSize() int64 {
 	val, _ := d.getInfoUlong(C.CL_DEVICE_GLOBAL_MEM_SIZE, true)
 	return val
 }
 
+// Available returns true if the device is available.
+// NOTE: this function returns true even for the invalid Apple cl_device_id 0xffffffff.
 func (d *Device) Available() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_AVAILABLE, true)
 	return val
 }
 
+// CompilerAvailable ..
 func (d *Device) CompilerAvailable() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_COMPILER_AVAILABLE, true)
 	return val
 }
 
+// EndianLittle returns true if the device supports little endian encoding
 func (d *Device) EndianLittle() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_ENDIAN_LITTLE, true)
 	return val
 }
 
-// Is CL_TRUE if the device implements error correction for all
-// accesses to compute device memory (global and constant). Is
+// ErrorCorrectionSupport is CL_TRUE if the device implements error correction
+// for all accesses to compute device memory (global and constant) and is
 // CL_FALSE if the device does not implement such error correction.
 func (d *Device) ErrorCorrectionSupport() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_ERROR_CORRECTION_SUPPORT, true)
 	return val
 }
 
+// HostUnifiedMemory ..
 func (d *Device) HostUnifiedMemory() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_HOST_UNIFIED_MEMORY, true)
 	return val
 }
 
+// ImageSupport ..
 func (d *Device) ImageSupport() bool {
 	val, _ := d.getInfoBool(C.CL_DEVICE_IMAGE_SUPPORT, true)
 	return val
 }
 
+// Type returns the specific DeviceType of the device e.g. DeviceTypeGPU
 func (d *Device) Type() DeviceType {
 	var deviceType C.cl_device_type
 	if err := C.clGetDeviceInfo(d.id, C.CL_DEVICE_TYPE, C.size_t(unsafe.Sizeof(deviceType)), unsafe.Pointer(&deviceType), nil); err != C.CL_SUCCESS {
@@ -483,6 +509,7 @@ func (d *Device) ExecutionCapabilities() ExecCapability {
 	return ExecCapability(execCap)
 }
 
+// GlobalMemCacheType ..
 func (d *Device) GlobalMemCacheType() MemCacheType {
 	var memType C.cl_device_mem_cache_type
 	if err := C.clGetDeviceInfo(d.id, C.CL_DEVICE_GLOBAL_MEM_CACHE_TYPE, C.size_t(unsafe.Sizeof(memType)), unsafe.Pointer(&memType), nil); err != C.CL_SUCCESS {

@@ -14,6 +14,7 @@ package cl
 */
 import "C"
 
+// Extra 1.2 flags
 const (
 	ChannelDataTypeUNormInt24  ChannelDataType = C.CL_UNORM_INT24
 	ChannelOrderDepth          ChannelOrder    = C.CL_DEPTH
@@ -49,6 +50,7 @@ func init() {
 	channelDataTypeNameMap[ChannelDataTypeUNormInt24] = "UNormInt24"
 }
 
+// ImageDescription ..
 type ImageDescription struct {
 	Type                            MemObjectType
 	Width, Height, Depth            int

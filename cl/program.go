@@ -19,12 +19,15 @@ import (
 	"unsafe"
 )
 
+// BuildError ..
 type BuildError string
 
+// Error ..
 func (e BuildError) Error() string {
 	return fmt.Sprintf("cl: build error (%s)", string(e))
 }
 
+// Program is the cl_program wrapping struct
 type Program struct {
 	clProgram C.cl_program
 	devices   []*Device
@@ -37,10 +40,12 @@ func releaseProgram(p *Program) {
 	}
 }
 
+// Release decrements the OpenCL atomic reference count of the underlying program pointer.
 func (p *Program) Release() {
 	releaseProgram(p)
 }
 
+// BuildProgram compiles the source code of the program on the given devices.
 func (p *Program) BuildProgram(devices []*Device, options string) error {
 	var cOptions *C.char
 	if options != "" {
@@ -51,7 +56,7 @@ func (p *Program) BuildProgram(devices []*Device, options string) error {
 	var deviceListPtr *C.cl_device_id
 	numDevices := C.cl_uint(0)
 	if devices != nil && len(devices) > 0 {
-		deviceList = buildDeviceIdList(devices)
+		deviceList = buildDeviceIDList(devices)
 		deviceListPtr = &deviceList[0]
 	}
 	if err := C.clBuildProgram(p.clProgram, numDevices, deviceListPtr, cOptions, nil, nil); err != C.CL_SUCCESS {
@@ -75,6 +80,7 @@ func (p *Program) BuildProgram(devices []*Device, options string) error {
 	return nil
 }
 
+// CreateKernel returns the *Kernel of the given name.
 func (p *Program) CreateKernel(name string) (*Kernel, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))

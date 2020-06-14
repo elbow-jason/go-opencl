@@ -22,15 +22,19 @@ import (
 )
 
 var (
-	ErrUnknown = errors.New("cl: unknown error") // Generally an unexpected result from an OpenCL function (e.g. CL_SUCCESS but null pointer)
+	// ErrUnknown is generally an unexpected result from an OpenCL function (e.g. CL_SUCCESS but null pointer)
+	ErrUnknown = errors.New("cl: unknown error")
 )
 
+// ErrOther is an error that covers other-than-expected status code integers.
 type ErrOther int
 
+// Error ..
 func (e ErrOther) Error() string {
 	return fmt.Sprintf("cl: error %d", int(e))
 }
 
+// Errors that are returnable by OpenCL as integers
 var (
 	ErrDeviceNotFound                     = errors.New("cl: Device Not Found")
 	ErrDeviceNotAvailable                 = errors.New("cl: Device Not Available")
@@ -151,8 +155,10 @@ func toError(code C.cl_int) error {
 	return ErrOther(code)
 }
 
+// LocalMemType ..
 type LocalMemType int
 
+// LocalMemType variants
 const (
 	LocalMemTypeNone   LocalMemType = C.CL_NONE
 	LocalMemTypeGlobal LocalMemType = C.CL_GLOBAL
@@ -165,6 +171,7 @@ var localMemTypeMap = map[LocalMemType]string{
 	LocalMemTypeLocal:  "Local",
 }
 
+// String for LocalMemType
 func (t LocalMemType) String() string {
 	name := localMemTypeMap[t]
 	if name == "" {
@@ -173,13 +180,16 @@ func (t LocalMemType) String() string {
 	return name
 }
 
+// ExecCapability ..
 type ExecCapability int
 
+// ExecCapability variants
 const (
 	ExecCapabilityKernel       ExecCapability = C.CL_EXEC_KERNEL        // The OpenCL device can execute OpenCL kernels.
 	ExecCapabilityNativeKernel ExecCapability = C.CL_EXEC_NATIVE_KERNEL // The OpenCL device can execute native kernels.
 )
 
+// String for ExecCapability
 func (ec ExecCapability) String() string {
 	var parts []string
 	if ec&ExecCapabilityKernel != 0 {
@@ -194,14 +204,16 @@ func (ec ExecCapability) String() string {
 	return strings.Join(parts, "|")
 }
 
+// MemCacheType ..
 type MemCacheType int
 
+// MemCacheType variants
 const (
 	MemCacheTypeNone           MemCacheType = C.CL_NONE
 	MemCacheTypeReadOnlyCache  MemCacheType = C.CL_READ_ONLY_CACHE
 	MemCacheTypeReadWriteCache MemCacheType = C.CL_READ_WRITE_CACHE
 )
-
+// String for MemCacheType
 func (ct MemCacheType) String() string {
 	switch ct {
 	case MemCacheTypeNone:
@@ -214,8 +226,11 @@ func (ct MemCacheType) String() string {
 	return fmt.Sprintf("Unknown(%x)", int(ct))
 }
 
+// MemFlag is the type for changing mutability and allocation of a MemObject
+// upon creation.
 type MemFlag int
 
+// MemFlag variants. Note there are invalid combos.
 const (
 	MemReadWrite    MemFlag = C.CL_MEM_READ_WRITE
 	MemWriteOnly    MemFlag = C.CL_MEM_WRITE_ONLY
@@ -225,16 +240,20 @@ const (
 	MemCopyHostPtr  MemFlag = C.CL_MEM_COPY_HOST_PTR
 )
 
+// MemObjectType ..
 type MemObjectType int
 
+// MemObjectType variants
 const (
 	MemObjectTypeBuffer  MemObjectType = C.CL_MEM_OBJECT_BUFFER
 	MemObjectTypeImage2D MemObjectType = C.CL_MEM_OBJECT_IMAGE2D
 	MemObjectTypeImage3D MemObjectType = C.CL_MEM_OBJECT_IMAGE3D
 )
 
+// MapFlag ..
 type MapFlag int
 
+// MapFlag variants
 const (
 	// This flag specifies that the region being mapped in the memory object is being mapped for reading.
 	MapFlagRead  MapFlag = C.CL_MAP_READ
@@ -245,8 +264,10 @@ func (mf MapFlag) toCl() C.cl_map_flags {
 	return C.cl_map_flags(mf)
 }
 
+// ChannelOrder ..
 type ChannelOrder int
 
+// ChannelOrder variants
 const (
 	ChannelOrderR         ChannelOrder = C.CL_R
 	ChannelOrderA         ChannelOrder = C.CL_A
@@ -287,8 +308,10 @@ func (co ChannelOrder) String() string {
 	return name
 }
 
+// ChannelDataType ..
 type ChannelDataType int
 
+// ChannelDataType variants
 const (
 	ChannelDataTypeSNormInt8      ChannelDataType = C.CL_SNORM_INT8
 	ChannelDataTypeSNormInt16     ChannelDataType = C.CL_SNORM_INT16
@@ -333,6 +356,7 @@ func (ct ChannelDataType) String() string {
 	return name
 }
 
+// ImageFormat ..
 type ImageFormat struct {
 	ChannelOrder    ChannelOrder
 	ChannelDataType ChannelDataType
@@ -345,8 +369,10 @@ func (f ImageFormat) toCl() C.cl_image_format {
 	return format
 }
 
+// ProfilingInfo ..
 type ProfilingInfo int
 
+// ProfilingInfo variants
 const (
 	// ProfilingInfoCommandQueued is a 64-bit value that describes the current device time counter in
 	// nanoseconds when the command identified by event is enqueued in
@@ -365,8 +391,10 @@ const (
 	ProfilingInfoCommandEnd ProfilingInfo = C.CL_PROFILING_COMMAND_END
 )
 
+// CommmandExecStatus ..
 type CommmandExecStatus int
 
+// CommmandExecStatus variants
 const (
 	CommmandExecStatusComplete  CommmandExecStatus = C.CL_COMPLETE
 	CommmandExecStatusRunning   CommmandExecStatus = C.CL_RUNNING
@@ -374,6 +402,7 @@ const (
 	CommmandExecStatusQueued    CommmandExecStatus = C.CL_QUEUED
 )
 
+// Event is the cl_event wrapping struct
 type Event struct {
 	clEvent C.cl_event
 }
@@ -385,10 +414,13 @@ func releaseEvent(ev *Event) {
 	}
 }
 
+// Release decrements the OpenCL atomic reference count for the underlying cl_event.
 func (e *Event) Release() {
 	releaseEvent(e)
 }
 
+// GetEventProfilingInfo returns the profiliing value for the given ProfilingInfo.
+// This info can be used to tune/benchmark execution.
 func (e *Event) GetEventProfilingInfo(paramName ProfilingInfo) (int64, error) {
 	var paramValue C.cl_ulong
 	if err := C.clGetEventProfilingInfo(e.clEvent, C.cl_profiling_info(paramName), C.size_t(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil); err != C.CL_SUCCESS {
@@ -454,6 +486,7 @@ func sizeT3(i3 [3]int) [3]C.size_t {
 	return val
 }
 
+// MappedMemObject ..
 type MappedMemObject struct {
 	ptr        unsafe.Pointer
 	size       int
@@ -461,6 +494,7 @@ type MappedMemObject struct {
 	slicePitch int
 }
 
+// ByteSlice of the MappedMemObject
 func (mb *MappedMemObject) ByteSlice() []byte {
 	var byteSlice []byte
 	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&byteSlice))
@@ -470,18 +504,22 @@ func (mb *MappedMemObject) ByteSlice() []byte {
 	return byteSlice
 }
 
+// Ptr of the MappedMemObject.
 func (mb *MappedMemObject) Ptr() unsafe.Pointer {
 	return mb.ptr
 }
 
+// Size of the MappedMemObject.
 func (mb *MappedMemObject) Size() int {
 	return mb.size
 }
 
+// RowPitch of the MappedMemObject.
 func (mb *MappedMemObject) RowPitch() int {
 	return mb.rowPitch
 }
 
+// SlicePitch of the MappedMemObject.
 func (mb *MappedMemObject) SlicePitch() int {
 	return mb.slicePitch
 }

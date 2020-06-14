@@ -15,6 +15,7 @@ package cl
 import "C"
 import "unsafe"
 
+// ArgName is the argument name in source code of the argument at the given index.
 func (k *Kernel) ArgName(index int) (string, error) {
 	var strC [1024]byte
 	var strN C.size_t

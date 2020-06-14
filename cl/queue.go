@@ -16,13 +16,16 @@ import (
 	"unsafe"
 )
 
+// CommandQueueProperty ..
 type CommandQueueProperty int
 
+// CommandQueueProperty variants
 const (
 	CommandQueueOutOfOrderExecModeEnable CommandQueueProperty = C.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
 	CommandQueueProfilingEnable          CommandQueueProperty = C.CL_QUEUE_PROFILING_ENABLE
 )
 
+// CommandQueue is the cl_command_queue wrapping struct
 type CommandQueue struct {
 	clQueue C.cl_command_queue
 	device  *Device
@@ -35,7 +38,7 @@ func releaseCommandQueue(q *CommandQueue) {
 	}
 }
 
-// Release calls clReleaseCommandQueue on the CommandQueue. Using the CommandQueue after Release will cause a panick.
+// Release calls clReleaseCommandQueue on the CommandQueue. Using the CommandQueue after Release will cause a panic.
 func (q *CommandQueue) Release() {
 	releaseCommandQueue(q)
 }
@@ -107,6 +110,7 @@ func (q *CommandQueue) EnqueueWriteBuffer(buffer *MemObject, blocking bool, offs
 	return newEvent(event), err
 }
 
+// EnqueueWriteBufferFloat32 ..
 func (q *CommandQueue) EnqueueWriteBufferFloat32(buffer *MemObject, blocking bool, offset int, data []float32, eventWaitList []*Event) (*Event, error) {
 	dataPtr := unsafe.Pointer(&data[0])
 	dataSize := int(unsafe.Sizeof(data[0])) * len(data)
@@ -120,6 +124,7 @@ func (q *CommandQueue) EnqueueReadBuffer(buffer *MemObject, blocking bool, offse
 	return newEvent(event), err
 }
 
+// EnqueueReadBufferFloat32 ..
 func (q *CommandQueue) EnqueueReadBufferFloat32(buffer *MemObject, blocking bool, offset int, data []float32, eventWaitList []*Event) (*Event, error) {
 	dataPtr := unsafe.Pointer(&data[0])
 	dataSize := int(unsafe.Sizeof(data[0])) * len(data)

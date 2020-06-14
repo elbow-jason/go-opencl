@@ -18,6 +18,8 @@ import (
 	"unsafe"
 )
 
+
+// CreateImage ..
 func (ctx *Context) CreateImage(flags MemFlag, imageFormat ImageFormat, imageDesc ImageDescription, data []byte) (*MemObject, error) {
 	format := imageFormat.toCl()
 	desc := imageDesc.toCl()
@@ -36,6 +38,7 @@ func (ctx *Context) CreateImage(flags MemFlag, imageFormat ImageFormat, imageDes
 	return newMemObject(clBuffer, len(data)), nil
 }
 
+// CreateImageSimple ..
 func (ctx *Context) CreateImageSimple(flags MemFlag, width, height int, channelOrder ChannelOrder, channelDataType ChannelDataType, data []byte) (*MemObject, error) {
 	format := ImageFormat{channelOrder, channelDataType}
 	desc := ImageDescription{
@@ -46,6 +49,7 @@ func (ctx *Context) CreateImageSimple(flags MemFlag, width, height int, channelO
 	return ctx.CreateImage(flags, format, desc, data)
 }
 
+// CreateImageFromImage ..
 func (ctx *Context) CreateImageFromImage(flags MemFlag, img image.Image) (*MemObject, error) {
 	switch m := img.(type) {
 	case *image.Gray:
